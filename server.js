@@ -106,7 +106,46 @@ app.post('/api/register', async (req, res) => {
 
 
 
+// Rota de login com JWT
+app.post('/api/login', async (req, res) => {
+    const { email, password, role } = req.body; 
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ success: false, message: 'Usuário não encontrado' });
+        }
 
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ success: false, message: 'Senha incorreta' });
+        }
+
+        // Verificar se o papel do usuário corresponde ao papel informado na solicitação
+        if (user.role !== role) {
+            return res.status(403).json({ success: false, message: 'Tipo de usuário errado' });
+        }
+
+        // Incluindo o ID do usuário no payload do token
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000, sameSite: 'None', secure: true });
+        res.json({ success: true, token });
+    } catch (error) {
+        console.error('Erro ao fazer login:', error);
+        res.status(500).json({ success: false, message: 'Erro ao fazer login' });
+    }
+});
+// Rota para obter dados do usuário
+app.get('/api/profile', authenticateToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password');
+        if (!user) return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+        res.json({ success: true, user });
+    } catch (error) {
+        console.error('Erro ao obter perfil do usuário:', error);
+        res.status(500).json({ success: false, message: 'Erro ao obter perfil do usuário' });
+    }
+});
 
 
 
