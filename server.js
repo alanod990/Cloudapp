@@ -146,7 +146,43 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
         res.status(500).json({ success: false, message: 'Erro ao obter perfil do usuário' });
     }
 });
+// Rota de logout
+app.post('/api/logout', (req, res) => {
+    res.cookie('token', '', { httpOnly: true, expires: new Date(0), sameSite: 'None', secure: true });
+    res.json({ success: true });
+});
 
+// Rota de registro de vinculo doador - coletor
+app.post('/api/appointment', async (req, res) => {
+    const {  collectorUserId,
+        collectorName,
+        collectorContact,
+        collectorEmail,
+        collectorAddress,
+        donorUserId,
+        donorName,
+        donorContact,
+        donorEmail } = req.body;
+
+
+    try {
+        const newAppointment = new Appointment({ collectorUserId,
+            collectorName,
+            collectorContact,
+            collectorEmail,
+            collectorAddress,
+            donorUserId,
+            donorName,
+            donorContact,
+            donorEmail });
+
+        await newAppointment.save();
+        res.status(201).json({ success: true, message: 'Sua solicitação de coleta foi registrada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao registrar a solicitação de coleta:', error);
+        res.status(500).json({ success: false, message: 'Erro ao registrar a solicitação de coleta' });
+    }
+});
 
 
 
