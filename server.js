@@ -184,6 +184,36 @@ app.post('/api/appointment', async (req, res) => {
     }
 });
 
+//Criar ponto de coleta
+app.post('/api/collectionpoint', async (req, res) => {
+    const { userId, name, contact, email, address, material } = req.body;
+
+
+    try {
+        const newCollectionPoint = new CollectionPoint({ userId, name, contact, email, address, material });
+        await newCollectionPoint.save();
+        res.status(201).json({ success: true, message: 'Seu ponto de coleta foi registrado com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao registrar o ponto de coleta:', error);
+        res.status(500).json({ success: false, message: 'Erro ao registrar o ponto de coleta' });
+    }
+});
+
+
+// Rota para obter dados de todos os coletores
+app.get('/api/allcollectionpoints', authenticateToken, async (req, res) => {
+    try {
+        // Buscar todos os documentos da coleção CollectionPoint
+        const collectionPoints = await CollectionPoint.find();
+
+        // Retornar os pontos de coleta encontrados
+        res.status(200).json({ success: true, collectionPoints });
+    } catch (error) {
+        console.error('Erro ao buscar pontos de coleta:', error);
+        res.status(500).json({ success: false, message: 'Erro ao buscar pontos de coleta' });
+    }
+});
+
 
 
 
