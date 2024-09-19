@@ -213,19 +213,71 @@ app.get('/api/allcollectionpoints', authenticateToken, async (req, res) => {
         res.status(500).json({ success: false, message: 'Erro ao buscar pontos de coleta' });
     }
 });
+// Rota para obter dados de um ponto de coleta específico
+app.get('/api/collectionpoint/:id', async (req, res) => {
+    const { id } = req.params;  // Captura o ID da URL
+
+    try {
+        // Buscar o ponto de coleta pelo ID
+        const collectionPoint = await CollectionPoint.findById(id);
+
+        // Verificar se o ponto de coleta foi encontrado
+        if (!collectionPoint) {
+            return res.status(404).json({ success: false, message: 'Ponto de coleta não encontrado' });
+        }
+
+        // Retornar o ponto de coleta encontrado
+        res.status(200).json({ success: true, collectionPoint });
+    } catch (error) {
+        console.error('Erro ao buscar o ponto de coleta:', error);
+        res.status(500).json({ success: false, message: 'Erro ao buscar o ponto de coleta' });
+    }
+});
 
 
+app.put('/api/users/:id', async (req, res) => {
+    const userId = req.params.id; //Passar id como parâmetro da consulta
+    const { name, email, address, password, role } = req.body;
 
+    try {
+        // Encontrar o usuário pelo ID e atualizar os campos fornecidos
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { name, email, address, password, role },
+            { new: true, runValidators: true } // new: true retorna o documento atualizado, runValidators: true aplica as validações
+        );
 
+        if (!updatedUser) {
+            return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+        }
 
+        res.status(200).json({ success: true, message: 'Usuário atualizado com sucesso', user: updatedUser });
+    } catch (error) {
+        console.error('Erro ao atualizar o usuário:', error);
+        res.status(500).json({ success: false, message: 'Erro ao atualizar o usuário' });
+    }
+});
+// Servir arquivos estáticos da pasta onde os arquivos estão localizados
+app.use(express.static(path.join(dirname, 'cadastro-usuarios')));
 
+// Rota para servir a página principal e de perfil
+app.get('/profile.html', authenticateToken, (req, res) => {
+    res.sendFile(path.join(dirname, 'cadastro-usuarios', 'profile.html'));
+});
 
+// Rota de login, redireciona usuários logados para o perfil
+app.get('/', redirectIfLoggedIn, (req, res) => {
+    res.sendFile(path.join(dirname, 'cadastro-usuarios', 'index.html'));
+});
 
-
-
-
-
-
+// Rota para todas as outras páginas protegidas
+app.get('*', redirectIfNotLoggedIn, (req, res) => {
+    if (req.path.endsWith('.html')) {
+        res.redirect('/');
+    } else {
+        res.sendFile(path.join(dirname, 'cadastro-usuarios', req.path));
+    }
+});
 // Iniciar o servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
